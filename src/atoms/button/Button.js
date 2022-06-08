@@ -1,5 +1,11 @@
+import './Button.css';
+
 export const Button = (props) => {
 	return (
-		<button>{props.children}</button>
+		<button id={props.id} className="button"
+			disabled={props.disabled}
+			onClick={props.onClick}>
+				{props.children}
+		</button>
 	)
 }

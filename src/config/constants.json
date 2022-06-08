@@ -1,5 +1,47 @@
 {
     "STORAGE_KEYS": {
         "KEY": "VAL"
-    }
+    },
+    "GEM_TYPE": {
+        "TENACITY": "tenacity",
+        "FORTITUDE": "fortitude",
+        "FEROCITY": "ferocity",
+        "HEALING": "healing",
+        "CONVICTION": "conviction",
+        "PROTECTION": "protection",
+        "LIFE": "life",
+        "VALOR": "valor",
+        "VITALITY": "vitality",
+        "RUIN": "ruin",
+        "INTUITION": "intuition"
+    },
+    "GEM_SHAPE": {
+        "TRIANGLE": "triangle",
+        "SQUARE": "square",
+        "DIAMOND": "diamond"
+    },
+    "GEM_ATTRIBUTES": {
+        "HP_FLAT": "HP (Flat)",
+        "HP_PERCENT": "HP %",
+        "ATTK_FLAT": "Atk (Flat)",
+        "ATTK_PERCENT": "Atk %",
+        "DEF_FLAT": "Def (Flat)",
+        "DEF_PERCENT": "Def %",
+        "REC_FLAT": "Rec (Flat)",
+        "REC_PERCENT": "Rec %",
+        "CD_PERCENT": "Crit. Dmg. %",
+        "CR_PERCENT": "Crit. Rate %",
+        "RES_PERCENT": "Res. %"
+    },
+    "ELEMENTS": {
+        "FIRE": "Fire",
+        "WATER": "Water",
+        "WOOD": "Wood",
+        "DARK": "Dark",
+        "LIGHT": "Light"
+    },
+    "MIN_STARS": 1,
+    "MAX_STARS": 6,
+    "MIN_UPGRADE": 0,
+    "MAX_UPGRADE": 15
 }

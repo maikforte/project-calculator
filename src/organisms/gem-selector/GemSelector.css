@@ -1,0 +1,74 @@
+.modal-container {
+    border-radius: 4px;
+    box-shadow: inset 0 0 10px #000000;
+    background-color: #532f26 !important;
+    border: solid 1.5px;
+    border-color: #9B836D;
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.options-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.gem-stats-wrapper {
+    /* width: 40%; */
+    min-width: 180px !important;
+    flex-grow: 1;
+}
+
+.gem-stats-wrapper > h4:not(:first-child) {
+    margin-top: 50px;
+}
+
+.gem-stats-wrapper .gem-stats-option-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gem-stats-option-wrapper:not(:first-child) {
+    margin-top: 15px;
+}
+
+.gem-type-wrapper {
+    display: flex;
+    flex-grow: 3;
+}
+
+.gem-stats-option-wrapper .label {
+    color: #fff;
+}
+
+#btn-save {
+    float: right;
+}
+
+.gem-stats-attribute-dropdown {
+    width: 100%;
+}
+
+.gem-stats-attribute-dropdown > #gem-attr-selector {
+    width: 100%;
+    font-family: 'Ubuntu Mono', monospace;
+    border-radius: 5px;
+    color: #fff;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #9B836D;
+    padding: 5px 15px;
+    background-color: #7F503A;
+    box-shadow: none !important;
+}
+
+.gem-stats-attribute-dropdown > #gem-attr-selector:hover {
+    border-color: #9B836D;
+    background-color: #3C2B25;
+}
+
+.gem-stats-attribute-dropdown > #gem-attr-selector:active {
+    background-color: #3C2B25 !important;
+}

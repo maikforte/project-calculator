@@ -1,0 +1,16 @@
+.button {
+    font-family: 'Ubuntu Mono', monospace;
+    border-radius: 5px;
+    color: #fff;
+    border-style: solid;
+    border-width: 1px;
+    border-color: #9B836D;
+    padding: 5px 15px;
+    background-color: #7F503A;
+    /* background-image: linear-gradient(180deg, #7F503A, #7F503A, #7F503A, #7F503A, #7F503A, #7F503A, #7F503A, #9B836D); */
+}
+
+.button:hover {
+    /* background-color: #A59888; */
+    background-color: #3C2B25;
+}

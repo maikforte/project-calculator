@@ -1,0 +1,36 @@
+.gem-wrapper {
+    display: inline-flex;
+}
+
+.gem-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gem-container:hover {
+    cursor: pointer;
+    border-radius: 10px;
+    background-color: #38231e;
+}
+
+.gem-upgrade-container {
+    position: relative;
+}
+
+.gem-upgrade-container .gem-upgrade {
+    color: #fff;
+    /* font-family: 'Ubuntu Mono', monospace; */
+    font-size: 22px;
+    position: absolute;
+    right: 7px;
+    top: 65px;
+}
+
+.star-container {
+    margin-left: 8px;
+}
+
+.star {
+    margin-left: -8px;
+}

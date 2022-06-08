@@ -1,0 +1,21 @@
+.gem-type-selector-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.gem-type-selector-selection-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.gem-type-selector-gem:hover {
+    cursor: pointer;
+    border-radius: 10px;
+    background-color: #38231e;
+}
+
+.gem-type-selector-gem-selected {
+    border-radius: 10px;
+    background-color: #38231e;
+}
