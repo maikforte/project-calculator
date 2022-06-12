@@ -1,11 +1,16 @@
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const uri = "mongouri";
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
 const CONSTANTS = require('../src/config/constants.json');
-const DEFAULT_STATS = require('./default_stats.json');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const url = "https://monstersuperleague.fandom.com/wiki/Category:Astromons";
 const baseUrl = "https://monstersuperleague.fandom.com";
 const IS_TEST = true;
-const MAX_TEST_ASTROMON = 10;
+const MAX_TEST_ASTROMON = 1;
+const STORE_TO_DB = false;
+const IS_PURGE = false;
 
 let monsterUrls = [];
 const astromons = [];
@@ -16,10 +21,6 @@ const ASTROMON_ELEMENTS = [
     CONSTANTS.ELEMENTS.LIGHT,
     CONSTANTS.ELEMENTS.DARK,
 ]
-
-let test = {
-    "Fire": {}
-}
 
 const fetchData = async (url) => {
     let response = await axios(url).catch((err) => console.log(err));
@@ -32,7 +33,7 @@ const fetchData = async (url) => {
     return response;
 }
 
-const crawlData = async (url) => {
+const crawlData = async (url, index) => {
     const astromonUrl = `${baseUrl}${url}`;
     res = await fetchData(astromonUrl);
 
@@ -46,6 +47,7 @@ const crawlData = async (url) => {
 
     let astromonElements = [];
 
+    astromon["_id"] = index;
     astromon["name"] = $("#firstHeading").text().trim();
     const leaderSkillContainer = $('span:contains("Leader Skill")').next().find("> div > div > span");
 
@@ -60,7 +62,7 @@ const crawlData = async (url) => {
         const tabs = $(this).find("> div.wds-tabs__wrapper > ul.wds-tabs > li");
 
         tabs.each(function(elementIndex) {
-            const element = $(this).find("div > a").text().trim().toString();
+            const element = $(this).find("div > a").text().trim().toString().toLowerCase();
             if (ASTROMON_ELEMENTS.includes(element)) {
                 astromon[element] = {
                     skills: {}
@@ -98,10 +100,12 @@ const crawlData = async (url) => {
 
                         normalSkillContainer.each(function(normalSkillIndex) {
                             const skillName = $(this).find("> div > div > span").text().trim();
+                            const skillDesc = $(this).find("> div > div > p").text().trim();
 
                             if (type && contentIndex === elementIndex) {
                                 if (normalSkillIndex === 0) {
                                     astromon[astromonElements[elementIndex]]["skills"]["normal_skill"] = skillName;
+                                    astromon[astromonElements[elementIndex]]["skills"]["normal_skill_desc"] = skillDesc;
                                 } else if (normalSkillIndex === 1) {
                                     astromon[astromonElements[elementIndex]]["skills"]["normal_passive"] = skillName;
                                 }
@@ -112,10 +116,17 @@ const crawlData = async (url) => {
 
                         activeSkillContainer.each(function(activeSkillIndex) {
                             const skillName = $(this).find("> div > div > span").text().trim();
+                            const skillDesc = $(this).find("> div > div > p").text().trim();
 
                             if (type && contentIndex === elementIndex) {
                                 if (activeSkillIndex === 0) {
                                     astromon[astromonElements[elementIndex]]["skills"]["active_skill"] = skillName;
+                                    astromon[astromonElements[elementIndex]]["skills"]["active_skill_desc"] = skillDesc;
+                                    if (skillDesc.toUpperCase().includes("HEAL")) {
+                                        astromon[astromonElements[elementIndex]]["is_healer"] = true;
+                                    } else {
+                                        astromon[astromonElements[elementIndex]]["is_healer"] = false;
+                                    }
                                 } else if (activeSkillIndex === 1) {
                                     astromon[astromonElements[elementIndex]]["skills"]["active_passive"] = skillName;
                                 }
@@ -127,7 +138,9 @@ const crawlData = async (url) => {
 
                     if (innerContentIndex === 1) {
                         const attrs = ["hp", "atk", "def", "rec"];
-                        
+                        const RGB = [CONSTANTS.ELEMENTS.FIRE, CONSTANTS.ELEMENTS.WATER, CONSTANTS.ELEMENTS.WOOD];
+                        const LD = [CONSTANTS.ELEMENTS.LIGHT, CONSTANTS.ELEMENTS.DARK];
+
                         for(let i = 1; i < 4; i ++) {
 
                             attrs.forEach((attr) => {
@@ -142,22 +155,37 @@ const crawlData = async (url) => {
                                         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`] = astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`] || {}
                                         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1] = astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1] || {}
                                         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1][attr] = val;
+
+                                        if (RGB.includes(astromonElements[contentIndex])) {
+                                            astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_rate"] = 10.0;
+                                            astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_dmg"] = 50.0;
+                                            astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_res"] = 0.0;
+                                            astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["res"] = 20.0;
+                                        } else if (LD.includes(astromonElements[contentIndex])) {
+                                            if (isHealer(astromon[astromonElements[contentIndex]])) {
+                                                astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_rate"] = 10.0;
+                                                astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_dmg"] = 50.0;
+                                                astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_res"] = 0.0;
+                                                astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["res"] = 30.0;
+                                            } else {
+                                                if (astromonElements[contentIndex] === CONSTANTS.ELEMENTS.LIGHT) {
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_rate"] = 20.0;
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_dmg"] = 50.0;
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_res"] = 0.0;
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["res"] = 0.0;
+                                                } else if (astromonElements[contentIndex] === CONSTANTS.ELEMENTS.DARK) {
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_rate"] = 10.0;
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_dmg"] = 100.0;
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_res"] = 0.0;
+                                                    astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["res"] = 0.0;
+                                                }
+                                            }
+                                        }
                                     }
                                 });
-                            })
-                            // let attributeContainer = $(this).find(`> div > div.flex-container > div#Evo${i}Stats > div#evo${i}HP > div`, `> div > div.flex-container > div#Evo${i}Stats > div#Evo${i}HP > div`);
-
-                            // attributeContainer.each(function(attributeIndex) {
-                            //     if (contentIndex === elementIndex) {
-                            //         let val = $(this).text().trim();
-                            //         val = val === "-" ? 0 : parseInt(val);
-                            //         astromon[astromonElements[contentIndex]]["stats"] = astromon[astromonElements[contentIndex]]["stats"] || {}
-                            //         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`] = astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`] || {}
-                            //         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1] = astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1] || {}
-                            //         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["hp"] = val;
-                            //     }
-                            // });
+                            });
                         }
+
                     }
                 })
             });
@@ -170,7 +198,11 @@ const crawlData = async (url) => {
     save();
 }
 
-const save = () => {
+const isHealer = (astromon) => {
+    return astromon["is_healer"]; 
+};
+
+const save = async () => {
     if (astromons.length == monsterUrls.length) {
         console.log(astromons);
 
@@ -182,7 +214,42 @@ const save = () => {
                 console.log(err);
             }
         });
+
+        if (STORE_TO_DB) {
+            await bulkInsert(astromons);
+        }
     }
+}
+
+const purge = async () => {
+    await client.connect(async () => {
+        const collection = client.db("Emesel").collection("Astromons");
+
+        await collection.remove();
+
+        client.close();
+    })
+}
+
+const bulkInsert = async (astromons) => {
+    await client.connect(async (err) => {
+        const collection = client.db("Emesel").collection("Astromons");
+        // perform actions on the collection object
+
+        if (IS_PURGE) {
+            await collection.remove();
+        }
+
+        const bulk = collection.initializeUnorderedBulkOp();
+
+        astromons.forEach((astromon) => {
+            bulk.insert(astromon);
+        });
+
+        await bulk.execute();
+
+        client.close();
+    });
 }
 
 const run = async () => {
@@ -212,11 +279,11 @@ const run = async () => {
     });
 
     if (IS_TEST) {
-        monsterUrls = monsterUrls.slice(0, MAX_TEST_ASTROMON + 1);
+        monsterUrls = monsterUrls.slice(0, MAX_TEST_ASTROMON);
     }
 
-    monsterUrls.every(async (url) => {
-        crawlData(url);
+    monsterUrls.forEach((url, index) => {
+        crawlData(url, index + 1);
     });
 }
 
