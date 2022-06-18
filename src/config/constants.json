@@ -34,11 +34,11 @@
         "RES_PERCENT": "Res. %"
     },
     "ELEMENTS": {
-        "FIRE": "Fire",
-        "WATER": "Water",
-        "WOOD": "Wood",
-        "DARK": "Dark",
-        "LIGHT": "Light"
+        "FIRE": "fire",
+        "WATER": "water",
+        "WOOD": "wood",
+        "DARK": "dark",
+        "LIGHT": "light"
     },
     "MIN_STARS": 1,
     "MAX_STARS": 6,

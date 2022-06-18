@@ -1,16 +1,21 @@
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const uri = "mongouri";
+const uri = "mongodb+srv://maikforte:m0Eag87LeSRdzXRy@cluster0.1uetg.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+
+const fs = require('fs');
+const path = require('path');
 
 const CONSTANTS = require('../src/config/constants.json');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const url = "https://monstersuperleague.fandom.com/wiki/Category:Astromons";
 const baseUrl = "https://monstersuperleague.fandom.com";
-const IS_TEST = true;
+const IS_TEST = false;
 const MAX_TEST_ASTROMON = 1;
-const STORE_TO_DB = false;
-const IS_PURGE = false;
+const STORE_TO_DB = true;
+const IS_PURGE = true;
+const IS_DOWNLOAD_IMAGES = true;
+const ASTROMON_IMAGE_FOLDER = "test";
 
 let monsterUrls = [];
 const astromons = [];
@@ -32,6 +37,30 @@ const fetchData = async (url) => {
 
     return response;
 }
+
+// fileUrl: the absolute url of the image or video you want to download
+// downloadFolder: the path of the downloaded file on your machine
+const downloadFile = async (fileUrl, downloadFolder, fileName) => {
+    // Get the file name
+    // const fileName = fileUrl + ".webp";
+  
+    // The path of the downloaded file on our machine
+    const localFilePath = path.resolve(__dirname, downloadFolder, fileName);
+    try {
+      const response = await axios({
+        method: 'GET',
+        url: fileUrl,
+        responseType: 'stream',
+      });
+  
+      const w = response.data.pipe(fs.createWriteStream(localFilePath));
+      w.on('finish', () => {
+        // console.log('Successfully downloaded file!');
+      });
+    } catch (err) { 
+      throw new Error(err);
+    }
+};
 
 const crawlData = async (url, index) => {
     const astromonUrl = `${baseUrl}${url}`;
@@ -89,9 +118,22 @@ const crawlData = async (url, index) => {
                         nameIndex === 2 ? astromon["evo_3_name"] = evoName : null;
                     });
 
-                    if (type && contentIndex === elementIndex) {
-                        astromon[astromonElements[elementIndex]]["type"] = type;
-                    }
+                    const portraitsContainer = $(this).find("> div#summarytop > div[id*='portrait']");
+
+                    portraitsContainer.each(function(index) {
+                        const portrait = $(this).find("> a").attr("href");
+
+                        if (type && contentIndex === elementIndex) {
+                            astromon[astromonElements[elementIndex]]["type"] = type;
+
+                            if (portrait && IS_DOWNLOAD_IMAGES && !portrait.includes("Special")) {
+                                const filename = `${astromon["name"]}_portrait${index + 1}_${astromonElements[elementIndex]}`;
+                                astromon[astromonElements[elementIndex]][`evo_${index + 1}_portrait`] = filename;
+                                downloadFile(portrait, ASTROMON_IMAGE_FOLDER, `${filename}.webp`);
+                            }
+                        }
+
+                    });
 
                     // Skills Comes Here
 
@@ -129,6 +171,7 @@ const crawlData = async (url, index) => {
                                     }
                                 } else if (activeSkillIndex === 1) {
                                     astromon[astromonElements[elementIndex]]["skills"]["active_passive"] = skillName;
+                                    astromon[astromonElements[elementIndex]]["skills"]["active_skill_desc"] = skillDesc;
                                 }
                             }
                         });
@@ -282,9 +325,18 @@ const run = async () => {
         monsterUrls = monsterUrls.slice(0, MAX_TEST_ASTROMON);
     }
 
-    monsterUrls.forEach((url, index) => {
+    monsterUrls.forEach(async (url, index) => {
         crawlData(url, index + 1);
+        // if (index % 20) {
+        //     await sleep(1000);
+        // }
     });
 }
+
+function sleep(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }  
 
 run();
