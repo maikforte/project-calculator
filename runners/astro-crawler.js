@@ -11,11 +11,11 @@ const cheerio = require('cheerio');
 const url = "https://monstersuperleague.fandom.com/wiki/Category:Astromons";
 const baseUrl = "https://monstersuperleague.fandom.com";
 const IS_TEST = false;
-const MAX_TEST_ASTROMON = 1;
+const MAX_TEST_ASTROMON = 6;
 const STORE_TO_DB = true;
 const IS_PURGE = true;
-const IS_DOWNLOAD_IMAGES = true;
-const ASTROMON_IMAGE_FOLDER = "test";
+const IS_DOWNLOAD_IMAGES = false;
+const ASTROMON_IMAGE_FOLDER = "public";
 
 let monsterUrls = [];
 const astromons = [];
@@ -25,7 +25,7 @@ const ASTROMON_ELEMENTS = [
     CONSTANTS.ELEMENTS.WOOD,
     CONSTANTS.ELEMENTS.LIGHT,
     CONSTANTS.ELEMENTS.DARK,
-]
+];
 
 const fetchData = async (url) => {
     let response = await axios(url).catch((err) => console.log(err));
@@ -71,6 +71,7 @@ const crawlData = async (url, index) => {
 
     const astromon = {
         name: null,
+        nat_stars: null,
         leader_skill: null
     };
 
@@ -124,10 +125,12 @@ const crawlData = async (url, index) => {
                         const portrait = $(this).find("> a").attr("href");
 
                         if (type && contentIndex === elementIndex) {
+                            // console.log(astromon.name, portrait);
+
                             astromon[astromonElements[elementIndex]]["type"] = type;
 
                             if (portrait && IS_DOWNLOAD_IMAGES && !portrait.includes("Special")) {
-                                const filename = `${astromon["name"]}_portrait${index + 1}_${astromonElements[elementIndex]}`;
+                                const filename = `${astromon["name"]}_evo_${index + 1}_${astromonElements[elementIndex]}`;
                                 astromon[astromonElements[elementIndex]][`evo_${index + 1}_portrait`] = filename;
                                 downloadFile(portrait, ASTROMON_IMAGE_FOLDER, `${filename}.webp`);
                             }
@@ -142,7 +145,11 @@ const crawlData = async (url, index) => {
 
                         normalSkillContainer.each(function(normalSkillIndex) {
                             const skillName = $(this).find("> div > div > span").text().trim();
-                            const skillDesc = $(this).find("> div > div > p").text().trim();
+                            let skillDesc = $(this).find("> div > div > p").text().trim();
+                            skillDesc = skillDesc.replaceAll("Skill Book Upgrades▼", "");
+                            skillDesc = skillDesc.replaceAll("\n", "");
+                            // skillDesc = skillDesc.slice(0, skillDesc.indexOf("\n"));
+                            // skillDesc = skillDesc.slice(0, skillDesc.indexOf("Skill Book"));
 
                             if (type && contentIndex === elementIndex) {
                                 if (normalSkillIndex === 0) {
@@ -158,7 +165,11 @@ const crawlData = async (url, index) => {
 
                         activeSkillContainer.each(function(activeSkillIndex) {
                             const skillName = $(this).find("> div > div > span").text().trim();
-                            const skillDesc = $(this).find("> div > div > p").text().trim();
+                            let skillDesc = $(this).find("> div > div > p").text().trim();
+                            skillDesc = skillDesc.replaceAll("Skill Book Upgrades▼", "");
+                            skillDesc = skillDesc.replaceAll("\n", "");
+                            // skillDesc = skillDesc.slice(0, skillDesc.indexOf("\n"));
+                            // skillDesc = skillDesc.slice(0, skillDesc.indexOf("Skill Book"));
 
                             if (type && contentIndex === elementIndex) {
                                 if (activeSkillIndex === 0) {
@@ -198,6 +209,10 @@ const crawlData = async (url, index) => {
                                         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`] = astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`] || {}
                                         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1] = astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1] || {}
                                         astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1][attr] = val;
+
+                                        if (!astromon.nat_stars && val != 0 && !isNaN(val)) {
+                                            astromon.nat_stars = attributeIndex + 1;
+                                        }
 
                                         if (RGB.includes(astromonElements[contentIndex])) {
                                             astromon[astromonElements[contentIndex]]["stats"][`evo_${i}`][attributeIndex + 1]["crit_rate"] = 10.0;
@@ -326,17 +341,16 @@ const run = async () => {
     }
 
     monsterUrls.forEach(async (url, index) => {
-        crawlData(url, index + 1);
+        await crawlData(url, index + 1);
         // if (index % 20) {
-        //     await sleep(1000);
+        //     console.log(index, "sleeping");
+        //     await sleep(5000);
         // }
     });
 }
 
 function sleep(ms) {
-    return new Promise((resolve) => {
-      setTimeout(resolve, ms);
-    });
-  }  
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 run();

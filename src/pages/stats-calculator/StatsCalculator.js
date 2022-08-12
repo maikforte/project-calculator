@@ -4,12 +4,14 @@ import CONSTANTS from '../../config/constants.json';
 
 import { Gems } from '../../molecules/Molecules';
 import { GemSelector } from '../../organisms/Organisms';
+import { AstromonService } from "../../services/AstromonService";
 
 
 class StatsCalculator extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            astromon: {},
             gems: [
                 {
                     type: CONSTANTS.GEM_TYPE.FORTITUDE,
@@ -36,6 +38,18 @@ class StatsCalculator extends React.Component {
             show: false,
             selectedGemIndex: null
         };
+
+        this.setAstromon();
+    }
+
+    setAstromon = async () => {
+        const astromon = await AstromonService.getAstromon('Persephone');
+
+        this.setState({
+            astromon: astromon
+        }, () => {
+            console.log(this.state);
+        });
     }
 
     setShow = () => {
@@ -104,16 +118,21 @@ class StatsCalculator extends React.Component {
     render() {
         return (
             <div>
-                <Gems gems={this.state.gems} changeGemIndex={this.changeGemIndex}/>
-                <GemSelector
-                    gem={this.state.gems[this.state.selectedGemIndex]}
-                    show={this.state.show}
-                    handleSave={this.handleSave}
-                    handleClose={this.handleClose}
-                    changeStars={this.changeStars}
-                    changeGemType={this.changeGemType}
-                    changeUpgrade={this.changeUpgrade}
-                    changeAttribute={this.changeAttribute} />
+                <div>
+                    asdasdkj
+                </div>
+                <div>
+                    <Gems gems={this.state.gems} changeGemIndex={this.changeGemIndex}/>
+                    <GemSelector
+                        gem={this.state.gems[this.state.selectedGemIndex]}
+                        show={this.state.show}
+                        handleSave={this.handleSave}
+                        handleClose={this.handleClose}
+                        changeStars={this.changeStars}
+                        changeGemType={this.changeGemType}
+                        changeUpgrade={this.changeUpgrade}
+                        changeAttribute={this.changeAttribute} />
+                </div>
             </div>
         );
     }
